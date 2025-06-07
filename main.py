@@ -722,10 +722,8 @@ def setup_handlers(application):
 
 
 def main():
-    # Загружаем изображения в кэш (синхронно)
     load_images_to_cache()
 
-    # Проверка существования изображений
     logger.info("Проверка изображений...")
     for key, filename in IMAGE_MAPPING.items():
         path = IMAGE_DIR / filename
@@ -734,13 +732,10 @@ def main():
         else:
             logger.info(f"✅ Изображение найдено: {path}")
 
-    # Запуск бота с обработкой конфликтов
     while True:
         try:
-            # Создаем новое приложение для каждого перезапуска
             application = ApplicationBuilder().token("8054818207:AAFq18jcwhO0h1i28mH-H2B_btNIMRyJLqQ").build()
 
-            # Настраиваем периодические напоминания
             if application.job_queue:
                 application.job_queue.run_repeating(
                     send_reminders,
@@ -754,14 +749,14 @@ def main():
 
             logger.info("Бот запущен...")
 
-            # Создаем новый цикл событий
+            # Создаем и запускаем новый цикл событий
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-            # Запускаем приложение в контекстном менеджере
-            with application:
-                loop.run_until_complete(application.start())
-                loop.run_forever()
+            loop.run_until_complete(application.initialize())
+            loop.run_until_complete(application.start())
+            loop.run_until_complete(application.updater.start_polling())  # для PTB < v20
+            loop.run_forever()
 
         except telegram.error.Conflict as e:
             logger.error(f"Конфликт: {e}")
@@ -775,21 +770,18 @@ def main():
             time.sleep(10)
 
         finally:
-            # Корректно закрываем приложение
             try:
-                if 'application' in locals() and application.running:
+                if 'application' in locals():
                     loop.run_until_complete(application.stop())
                     loop.run_until_complete(application.shutdown())
             except Exception as e:
                 logger.error(f"Ошибка при остановке приложения: {e}")
 
-            # Закрываем цикл событий
             try:
                 if 'loop' in locals():
                     loop.close()
             except Exception as e:
                 logger.error(f"Ошибка при закрытии цикла событий: {e}")
-
 
 if __name__ == "__main__":
     main()
