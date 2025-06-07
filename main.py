@@ -734,7 +734,7 @@ def main():
 
     while True:
         try:
-            application = ApplicationBuilder().token("8054818207:AAFq18jcwhO0h1i28mH-H2B_btNIMRyJLqQ").build()
+            application = ApplicationBuilder().token("8044048565:AAHEF2GDPtKAXxhhOe816DRQS_RcqCisub4").build()
 
             if application.job_queue:
                 application.job_queue.run_repeating(
