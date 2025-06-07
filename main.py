@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 # Константы для состояний
 CHOOSING, TYPING_WISH, TYPING_SOUL, HOLIDAY_NAME, HOLIDAY_STYLE = range(5)
-ADMIN_ID = int(os.getenv('1291710833', 1291710833))  # Замените на реальный ID
+ADMIN_ID = int(os.getenv('837143069', 837143069))  # Замените на реальный ID
 
 # Пути к изображениям
 BASE_DIR = Path(__file__).parent
@@ -735,7 +735,7 @@ def main():
     # Запуск бота с обработкой конфликтов
     while True:
         try:
-            application = ApplicationBuilder().token("8054818207:AAFq18jcwhO0h1i28mH-H2B_btNIMRyJLqQ").build()
+            application = ApplicationBuilder().token("7271843871:AAHOABueASQSeNmBO_7RHkzaxGjhz5yz5J8").build()
 
             # Настраиваем периодические напоминания
             if application.job_queue:
