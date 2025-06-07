@@ -66,6 +66,31 @@ IMAGE_MAPPING = {
 # Кэш для изображений
 image_cache = {}
 
+async def send_notification(context: ContextTypes.DEFAULT_TYPE, user, action: str, details: str = ""):
+    """Отправляет уведомление администратору о действии пользователя"""
+    if not notification_enabled:
+        return
+
+    try:
+        message = (
+            f"🔔 Новое действие!\n\n"
+            f"👤 Пользователь: {user.first_name} (@{user.username or 'N/A'})\n"
+            f"🆔 ID: {user.id}\n"
+            f"📝 Действие: {action}\n"
+        )
+
+        if details:
+            message += f"📌 Детали: {details}\n"
+
+        message += f"🕒 Время: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=message
+        )
+    except Exception as e:
+        logger.error(f"Ошибка отправки уведомления: {e}")
+
 # Загрузка изображений в кэш (синхронная)
 def load_images_to_cache():
     """Загружает все изображения в кэш при старте"""
@@ -247,18 +272,21 @@ async def adventure_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     log_activity(user.id, "Adventure Time")
     await send_image(update, "adventure_time", RESPONSES['adventure'])
+    await send_notification(context, user, "Adventure Time")
 
 
 async def something_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     log_activity(user.id, "Что-то новенькое")
     await send_image(update, "something_new", RESPONSES['something_new'])
+    await send_notification(context, user, "Что-то новенькое")
 
 
 async def breakfast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     log_activity(user.id, "Завтрак в постель")
     await send_image(update, "breakfast", RESPONSES['breakfast'])
+    await send_notification(context, user, "Завтрак в постель")
 
 
 async def snacks_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -283,6 +311,7 @@ async def snacks_drink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     log_activity(user.id, "Попить")
     await send_image(update, "snacks_drink", RESPONSES['snacks']['drink'])
+    await send_notification(context, user, "Попить")
     await show_main_menu(update, "Что-нибудь еще?")
 
 
@@ -290,6 +319,7 @@ async def snacks_food(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     log_activity(user.id, "Покушать")
     await send_image(update, "snacks_food", RESPONSES['snacks']['food'])
+    await send_notification(context, user, "Покушать")
     await show_main_menu(update, "Что-нибудь еще?")
 
 
@@ -297,6 +327,7 @@ async def snacks_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     log_activity(user.id, "Заказать что-нибудь")
     await send_image(update, "snacks_order", RESPONSES['snacks']['order'], reply_markup=ReplyKeyboardRemove())
+    await send_notification(context, user, "")
     return TYPING_WISH
 
 
@@ -330,6 +361,7 @@ async def handle_spell(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Магия не сработала... Попробуй еще раз ✨")
 
+    await send_notification(context, user, f"Использовали заклинание {spell_num}")
     await spells_menu(update, context)  # Возврат в меню заклинаний
 
 
@@ -337,6 +369,7 @@ async def shock_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     log_activity(user.id, "Шок-контент")
     number = RESPONSES['shock']()
+    await send_notification(context, user, f" Шок-контент{number}")
     await send_image(update, "shock", f"Ваше число: {number}")
 
 
@@ -349,12 +382,14 @@ async def games(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def flirt_mode(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     log_activity(user.id, "Флирт-режим")
+    await send_notification(context, user, f"Флирт режим")
     await send_image(update, "flirt", RESPONSES['flirt'])
 
 
 async def secret_level(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     log_activity(user.id, "Секретный уровень")
+    await send_notification(context, user, f"Секректный уровень")
     await send_image(update, "secret", RESPONSES['secret'])
 
 
@@ -376,6 +411,8 @@ async def custom_wish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     log_activity(user.id, "Добавить пожелание")
     await send_image(update, "custom_wish", "Напиши, чего тебе хочется — и я это реализую!",
                      reply_markup=ReplyKeyboardRemove())
+    message = f"📝 Пользователь @{user.username or user.first_name} (ID: {user.id}) начал писать пожелание."
+    await context.bot.send_message(chat_id=ADMIN_ID, text=message)
     return TYPING_WISH
 
 
@@ -419,6 +456,7 @@ async def save_soul_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     log_activity(user.id, f"Тема для разговора: {topic}")
     await update.message.reply_text("Хорошо, обсудим это сегодня вечером 🌙")
     await show_main_menu(update, "Что-нибудь еще?")
+    await send_notification(context, user, f"По душам: {topic}")
     return ConversationHandler.END
 
 
@@ -434,6 +472,7 @@ async def holiday_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['holiday_name'] = update.message.text
     keyboard = [["🎬 В стиле фильма", "🏠 Уютно"], ["😂 Шутливо"], ["🔙 Назад"]]
     await update.message.reply_text("Выберите стиль:", reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
+    await send_notification(context, user, f"Начал ввод названия праздника: {context.user_data.get('holiday_name', '')}")
     return HOLIDAY_STYLE
 
 
@@ -443,6 +482,7 @@ async def holiday_style(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = context.user_data.get("holiday_name", "Без названия")
     log_activity(user.id, f"Праздник: {name}, Стиль: {style}")
     await show_main_menu(update, f"Отлично! Праздник «{name}» в стиле «{style}» записан!")
+    await send_notification(context, user, f"Праздник «{name}» в стиле «{style}»")
     return ConversationHandler.END
 
 
