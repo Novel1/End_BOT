@@ -735,7 +735,7 @@ def main():
     # Запуск бота с обработкой конфликтов
     while True:
         try:
-            application = ApplicationBuilder().token("7271843871:AAHOABueASQSeNmBO_7RHkzaxGjhz5yz5J8").build()
+            application = ApplicationBuilder().token("8044048565:AAHEF2GDPtKAXxhhOe816DRQS_RcqCisub4").build()
 
             # Настраиваем периодические напоминания
             if application.job_queue:
