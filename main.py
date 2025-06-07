@@ -470,6 +470,7 @@ async def holiday_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def holiday_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['holiday_name'] = update.message.text
+    user = update.message.from_user
     keyboard = [["🎬 В стиле фильма", "🏠 Уютно"], ["😂 Шутливо"], ["🔙 Назад"]]
     await update.message.reply_text("Выберите стиль:", reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
     await send_notification(context, user, f"Начал ввод названия праздника: {context.user_data.get('holiday_name', '')}")
