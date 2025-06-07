@@ -10,6 +10,7 @@ from telegram.ext import (
     CallbackContext,
     JobQueue
 )
+import asyncio
 import tempfile
 import requests
 from telegram import ReplyKeyboardRemove
@@ -736,7 +737,8 @@ def main():
     # Запуск бота с обработкой конфликтов
     while True:
         try:
-            application = ApplicationBuilder().token("8044048565:AAHEF2GDPtKAXxhhOe816DRQS_RcqCisub4").build()
+            # Создаем новое приложение для каждого перезапуска
+            application = ApplicationBuilder().token("8054818207:AAFq18jcwhO0h1i28mH-H2B_btNIMRyJLqQ").build()
 
             # Настраиваем периодические напоминания
             if application.job_queue:
@@ -751,7 +753,15 @@ def main():
             setup_handlers(application)
 
             logger.info("Бот запущен...")
-            application.run_polling()
+
+            # Создаем новый цикл событий
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            # Запускаем приложение в контекстном менеджере
+            with application:
+                loop.run_until_complete(application.start())
+                loop.run_forever()
 
         except telegram.error.Conflict as e:
             logger.error(f"Конфликт: {e}")
@@ -760,9 +770,25 @@ def main():
 
         except Exception as e:
             logger.error(f"Критическая ошибка: {e}")
-            logger.error(traceback.format_exc())  # Логируем полный стек вызовов
+            logger.error(traceback.format_exc())
             logger.info("Перезапуск через 10 секунд...")
             time.sleep(10)
+
+        finally:
+            # Корректно закрываем приложение
+            try:
+                if 'application' in locals() and application.running:
+                    loop.run_until_complete(application.stop())
+                    loop.run_until_complete(application.shutdown())
+            except Exception as e:
+                logger.error(f"Ошибка при остановке приложения: {e}")
+
+            # Закрываем цикл событий
+            try:
+                if 'loop' in locals():
+                    loop.close()
+            except Exception as e:
+                logger.error(f"Ошибка при закрытии цикла событий: {e}")
 
 
 if __name__ == "__main__":
